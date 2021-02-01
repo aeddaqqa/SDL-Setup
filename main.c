@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aeddaqqa <aeddaqqa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: farwila <farwila@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/01/31 16:30:29 by aeddaqqa          #+#    #+#             */
-/*   Updated: 2021/02/01 18:51:35 by aeddaqqa         ###   ########.fr       */
+/*   Updated: 2021/02/01 21:37:00 by farwila          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "./SDL2.framework/Headers/SDL.h"
-#include "./SDL2_image.framework/Headers/SDL_image.h"
-#include "./SDL2_ttf.framework/Headers/SDL_ttf.h"
+#include "SDL2/SDL.h"
+#include "SDL2/SDL_image.h"
+#include "SDL2/SDL_ttf.h"
 
 #define W 800
 #define H 800
@@ -98,7 +98,7 @@ void		title(t_sdl *sdl)
 
 // EAB543
 
-void		square(t_sdl *sdl)
+void		square(t_sdl *sdl, int x)
 {
 	SDL_Rect	src;
 	int			i;
@@ -120,9 +120,18 @@ void		square(t_sdl *sdl)
 		}
 		i++;
 	}
+	if (x < 6)
+	{
+		src.x = 70;
+		src.y = (220 + x * 79);
+		src.w = 260;
+		src.h = 58;
+		SDL_SetRenderDrawColor(sdl->ren_menu, 0, 0, 0, 0);
+		SDL_RenderFillRect(sdl->ren_menu, &src);
+	}
 }
 
-void		elements(t_sdl *sdl)
+void		elements(t_sdl *sdl, int x)
 {
 	int			i;
 	int			tex_x;
@@ -131,6 +140,7 @@ void		elements(t_sdl *sdl)
 	SDL_Texture	*tex;
 	SDL_Surface	*sur;
 	char 		*tab[6];
+	SDL_Color	color;
 
 	i = 0;
 	tab[0] = (char *)"Antiliasing";
@@ -138,12 +148,13 @@ void		elements(t_sdl *sdl)
 	tab[2] = (char *)"Sepia";
 	tab[3] = (char *)"Grey";
 	tab[4] = (char *)"Cartoon";
-	tab[5] = (char *)"Stereoscopy";
+	tab[5] = (char *)"Stereoscopy";//EAB543
 	while (i < 6)
 	{
 		tex_x = 0;
 		tex_y = 0;
-		sur = TTF_RenderText_Blended(sdl->font_s, tab[i], (SDL_Color)FONT_S);
+		color = (x == i) ? (SDL_Color){0xff, 0xff, 0xff} : (SDL_Color)FONT_S;
+		sur = TTF_RenderText_Blended(sdl->font_s, tab[i], color);
 		if (!sur)
 			exit(1);
 		tex = SDL_CreateTextureFromSurface(sdl->ren_menu, sur);
@@ -188,13 +199,48 @@ void		load_button(t_sdl *sdl)
 	SDL_DestroyTexture(tex);
 }
 
-void		menu(t_sdl *sdl)
+void		menu(t_sdl *sdl, SDL_Event event)
 {
+	int			x;
+	int			y;
+	SDL_Rect	a;
+	SDL_Rect	b;
+	SDL_Rect	c;
+	int			i;
+
 	SDL_SetRenderDrawColor(sdl->ren_menu, 0x18, 0x2c, 0x61, 255);
 	SDL_RenderClear(sdl->ren_menu);
 	title(sdl);
-	square(sdl);
-	elements(sdl);
+	SDL_GetMouseState(&x, &y);
+	// else if (event.type == SDL_MOUSEBUTTONDOWN)
+	// {
+	// 	if (event.button.button == SDL_BUTTON_LEFT)
+	// 		printf("bak + 4\n");
+	// 		int x,y;
+		
+	// 	printf("(%d, %d)", x, y);
+	// }
+	a.x = x;
+	a.y = y;
+	a.w = 1;
+	a.h = 1;
+	i = 8;
+	if (SDL_GetMouseFocus() == sdl->win_menu)
+	{
+		i = 0;
+		while (i < 6)
+		{
+			b.x = 70;
+			b.y = 220 + (i * 79);
+			b.w = 260;
+			b.h = 58;
+			if (SDL_IntersectRect(&a, &b, &c) == SDL_TRUE)
+				break;
+			i++;
+		}
+	}
+	square(sdl, i);
+	elements(sdl, i);
 	load_button(sdl);
 	SDL_RenderPresent(sdl->ren_menu);
 }
@@ -216,8 +262,16 @@ int			main(int ac, char **av)
 			{
 				if (event.type == SDL_QUIT)
 					break;
+				// else if (event.type == SDL_MOUSEBUTTONDOWN)
+				// {
+				// 	if (event.button.button == SDL_BUTTON_LEFT)
+				// 		printf("bak + 4\n");
+				// 		int x,y;
+				// 	SDL_GetMouseState(&x, &y);
+				// 	printf("(%d, %d)", x, y);
+				// }
 				key_table = (char*)SDL_GetKeyboardState(NULL);
-				menu(sdl);
+				menu(sdl, event);
 				SDL_RenderPresent(sdl->ren_ptr);
 				if (key_table[SDL_SCANCODE_ESCAPE])
 					loop = 0;
